@@ -1,0 +1,123 @@
+package labgaus;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
+// Класс для хранения системы уравнений и ее решения
+public class LinearEquationSystem {
+    private int n; // количество уравнений
+    private int m; // количество неизвестных
+    private double[][] Ab; // коэффициенты при неизвестных и свободные члены
+    private double[] x; // решение системы уравнений
+
+    // Конструктор для создания объекта и чтения данных из файла
+    public LinearEquationSystem(String filename) throws FileNotFoundException {
+        Scanner scanner = new Scanner(new File(filename));
+        n = scanner.nextInt(); // считываем количество уравнений
+        m = scanner.nextInt(); // считываем количество неизвестных
+        Ab = new double[n][m + 1]; // создаем массив для хранения коэффициентов при неизвестных и свободных членах
+        x = new double[m]; // создаем массив для хранения решения системПродолжение кода:
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m + 1; j++) {
+                Ab[i][j] = scanner.nextDouble(); // считываем коэффициенты при неизвестных и свободные члены
+            }
+        }
+        scanner.close();
+    }
+
+    // Метод для приведения системы уравнений к треугольному виду
+    //1)Внешний цикл по переменной k проходит по всем строкам матрицы коэффициентов A до предпоследней строки (так как последняя строка уже будет содержать только одно уравнение с одной неизвестной).
+    //2)Внутренний цикл по переменной i проходит по всем строкам A ниже текущей строки.
+    //если 0 на диагонали - найти строку
+    //3)Для каждой строки i вычисляется коэффициент, на который нужно умножить элементы текущей строки k для того, чтобы получить нули в столбце k ниже текущей строки i. Этот коэффициент записывается в переменную ZXC (допустим)
+    //4)Затем внутренний цикл по переменной j проходит по всем элементам матрицы A правее столбца k текущей строки i. Для каждого элемента A[i][j] вычитается произведение соответствующего элемента A[k][j] на коэффициент ZXC, чтобы получить ноль в строке i и столбце k.
+    //5)Также вычитается произведение ZXC на свободный член b[k] из свободного члена b[i]. Это делается для того, чтобы система уравнений не изменилась, т.к. мы переставляем строки и добавляем к ним другие строки, умноженные на коэффициент.
+    public void toTriangleForm() {
+        for (int k = 0; k < n - 1; k++) {
+            if (Ab[k][k] == 0) {
+                // Если на главной диагонали находится ноль, то нужно поменять местами строки
+                boolean swapped = false;
+                for (int i = k + 1; i < n; i++) {
+                    if (Ab[i][k] != 0) {
+                        // Меняем местами строки
+                        double[] temp = Ab[k];
+                        Ab[k] = Ab[i];
+                        Ab[i] = temp;
+                        swapped = true;
+                        break;
+                    }
+                }
+                if (!swapped) {
+                    // Если не удалось найти строку с ненулевым
+
+
+                    break;
+                }
+            }
+            for (int i = k + 1; i < n; i++) {
+                double coeff = Ab[i][k] / Ab[k][k];
+                for (int j = k; j < m + 1; j++) {
+                    Ab[i][j] -= coeff * Ab[k][j];
+                }
+            }
+        }
+    }
+
+    // Метод для решения системы линейных уравнений
+    public void solve() {
+        toTriangleForm();
+
+        // Проверяем, есть ли решение системы уравнений
+        for (int i = 0; i < n; i++) {
+            boolean allZeroes = true;
+            for (int j = 0; j < m + 1; j++) {
+                if (Ab[i][j] != 0) {
+                    allZeroes = false;
+                    break;
+                }
+            }
+            if (allZeroes) {
+                throw new ArithmeticException("Система уравнений вырождена и имеет бесконечное множество решений");
+            }
+        }
+
+        // Решаем систему уравнений методом обратной подстановки
+        for (int i = n - 1; i >= 0; i--) {
+            double coeff = Ab[i][m];
+            for (int j = i + 1; j < n; j++) {
+                coeff -= Ab[i][j] * x[j];
+            }
+            x[i] = coeff / Ab[i][i];
+        }
+    }
+    public void printSystem() {
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m + 1; j++) {
+                System.out.print(Ab[i][j] + " ");
+            }
+            System.out.println();
+        }
+    }
+
+    public void printTriangleSystem() {
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m + 1; j++) {
+                if (j < i) {
+                    System.out.print("0 ");
+                } else {
+                    System.out.print(Ab[i][j] + " ");
+                }
+            }
+            System.out.println();
+        }
+    }
+
+    // Метод для вывода решения системы уравнений на экран
+    public void printSolution() {
+        for (int i = 0; i < m; i++) {
+            System.out.printf("x%d = %.2f%n", i + 1, x[i]);
+        }
+    }
+}
